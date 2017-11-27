@@ -14,7 +14,7 @@ Example:
         )
 
         func main() {
-            es := eventsource.New(nil, nil)
+            es := eventsource.New(nil, nil, nil)
             defer es.Close()
             http.Handle("/events", es)
             go func() {
