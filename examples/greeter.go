@@ -1,14 +1,16 @@
 package main
 
 import (
-	"gopkg.in/antage/eventsource.v1"
+	"github.com/the5heepdev/eventsource"
 	"log"
 	"net/http"
 	"time"
 )
 
 func main() {
-	es := eventsource.New(nil, nil)
+	es := eventsource.New(nil, nil, func(c *eventsource.Consumer) {
+		c.Message(eventsource.Msg("connect function example", "", ""))
+	})
 	defer es.Close()
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 	http.Handle("/events", es)

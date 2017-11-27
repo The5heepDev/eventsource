@@ -6,7 +6,7 @@ Example:
         package main
 
         import (
-            "gopkg.in/antage/eventsource.v1"
+            "github.com/the5heepdev/eventsource"
             "log"
             "net/http"
             "strconv"
