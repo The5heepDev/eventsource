@@ -16,6 +16,9 @@ type consumer struct {
 	staled bool
 }
 
+// Consumer is an exported alias of consumer
+type Consumer = consumer
+
 type gzipConn struct {
 	net.Conn
 	*gzip.Writer
@@ -126,4 +129,17 @@ func newConsumer(resp http.ResponseWriter, req *http.Request, es *eventSource) (
 	}()
 
 	return consumer, nil
+}
+
+// Message will take an eventMessage and send it to the consumer
+func (c *consumer) Message(m message) {
+	message := m.prepareMessage()
+
+	// Only send this message if the consumer isn't staled
+	if !c.staled {
+		select {
+		case c.in <- message:
+		default:
+		}
+	}
 }

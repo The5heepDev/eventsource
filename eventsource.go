@@ -23,6 +23,7 @@ type retryMessage struct {
 
 type eventSource struct {
 	customHeadersFunc func(*http.Request) [][]byte
+	customConnectFunc func(*Consumer)
 
 	sink           chan message
 	staled         chan *consumer
@@ -118,21 +119,12 @@ func controlProcess(es *eventSource) {
 	for {
 		select {
 		case em := <-es.sink:
-			message := em.prepareMessage()
 			func() {
 				es.consumersLock.RLock()
 				defer es.consumersLock.RUnlock()
 
 				for e := es.consumers.Front(); e != nil; e = e.Next() {
-					c := e.Value.(*consumer)
-
-					// Only send this message if the consumer isn't staled
-					if !c.staled {
-						select {
-						case c.in <- message:
-						default:
-						}
-					}
+					e.Value.(*consumer).Message(em)
 				}
 			}()
 		case <-es.close:
@@ -162,6 +154,7 @@ func controlProcess(es *eventSource) {
 				defer es.consumersLock.Unlock()
 
 				es.consumers.PushBack(c)
+				es.customConnectFunc(c)
 			}()
 		case c := <-es.staled:
 			toRemoveEls := make([]*list.Element, 0, 1)
@@ -189,13 +182,14 @@ func controlProcess(es *eventSource) {
 }
 
 // New creates new EventSource instance.
-func New(settings *Settings, customHeadersFunc func(*http.Request) [][]byte) EventSource {
+func New(settings *Settings, customHeadersFunc func(*http.Request) [][]byte, customConnectFunc func(*Consumer)) EventSource {
 	if settings == nil {
 		settings = DefaultSettings()
 	}
 
 	es := new(eventSource)
 	es.customHeadersFunc = customHeadersFunc
+	es.customConnectFunc = customConnectFunc
 	es.sink = make(chan message, 1)
 	es.close = make(chan bool)
 	es.staled = make(chan *consumer, 1)
@@ -221,6 +215,11 @@ func (es *eventSource) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	es.add <- cons
+}
+
+// Msg returns an eventMessage
+func Msg(data, event, id string) *eventMessage {
+	return &eventMessage{id, event, data}
 }
 
 func (es *eventSource) sendMessage(m message) {
