@@ -132,7 +132,7 @@ func newConsumer(resp http.ResponseWriter, req *http.Request, es *eventSource) (
 }
 
 // Message will take an eventMessage and send it to the consumer
-func (c *consumer) Message(m message) {
+func (c *Consumer) Message(m message) {
 	message := m.prepareMessage()
 
 	// Only send this message if the consumer isn't staled
