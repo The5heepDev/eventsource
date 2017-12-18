@@ -9,15 +9,12 @@ import (
 	"time"
 )
 
-type consumer struct {
+type Consumer struct {
 	conn   io.WriteCloser
 	es     *eventSource
 	in     chan []byte
 	staled bool
 }
-
-// Consumer is an exported alias of consumer
-type Consumer = consumer
 
 type gzipConn struct {
 	net.Conn
@@ -42,13 +39,13 @@ func (gc gzipConn) Close() error {
 	return gc.Conn.Close()
 }
 
-func newConsumer(resp http.ResponseWriter, req *http.Request, es *eventSource) (*consumer, error) {
+func newConsumer(resp http.ResponseWriter, req *http.Request, es *eventSource) (*Consumer, error) {
 	conn, _, err := resp.(http.Hijacker).Hijack()
 	if err != nil {
 		return nil, err
 	}
 
-	consumer := &consumer{
+	consumer := &Consumer{
 		conn:   conn,
 		es:     es,
 		in:     make(chan []byte, 10),
