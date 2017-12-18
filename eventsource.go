@@ -26,8 +26,8 @@ type eventSource struct {
 	customConnectFunc func(*Consumer)
 
 	sink           chan message
-	staled         chan *consumer
-	add            chan *consumer
+	staled         chan *Consumer
+	add            chan *Consumer
 	close          chan bool
 	idleTimeout    time.Duration
 	retry          time.Duration
@@ -124,7 +124,7 @@ func controlProcess(es *eventSource) {
 				defer es.consumersLock.RUnlock()
 
 				for e := es.consumers.Front(); e != nil; e = e.Next() {
-					e.Value.(*consumer).Message(em)
+					e.Value.(*Consumer).Message(em)
 				}
 			}()
 		case <-es.close:
@@ -138,7 +138,7 @@ func controlProcess(es *eventSource) {
 				defer es.consumersLock.RUnlock()
 
 				for e := es.consumers.Front(); e != nil; e = e.Next() {
-					c := e.Value.(*consumer)
+					c := e.Value.(*Consumer)
 					close(c.in)
 				}
 			}()
@@ -163,7 +163,7 @@ func controlProcess(es *eventSource) {
 				defer es.consumersLock.RUnlock()
 
 				for e := es.consumers.Front(); e != nil; e = e.Next() {
-					if e.Value.(*consumer) == c {
+					if e.Value.(*Consumer) == c {
 						toRemoveEls = append(toRemoveEls, e)
 					}
 				}
@@ -192,8 +192,8 @@ func New(settings *Settings, customHeadersFunc func(*http.Request) [][]byte, cus
 	es.customConnectFunc = customConnectFunc
 	es.sink = make(chan message, 1)
 	es.close = make(chan bool)
-	es.staled = make(chan *consumer, 1)
-	es.add = make(chan *consumer)
+	es.staled = make(chan *Consumer, 1)
+	es.add = make(chan *Consumer)
 	es.consumers = list.New()
 	es.timeout = settings.Timeout
 	es.idleTimeout = settings.IdleTimeout
